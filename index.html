@@ -75,11 +75,32 @@
     <div id="msg"></div>
   </div>
 
-  <script>
+  <!-- Script que conecta ao Firebase e salva no Firestore -->
+  <script type="module">
+    // Importa as bibliotecas do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
+      authDomain: "fila-online-7b900.firebaseapp.com",
+      projectId: "fila-online-7b900",
+      storageBucket: "fila-online-7b900.firebasestorage.app",
+      messagingSenderId: "797876819240",
+      appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
+    };
+
+    // Inicializa Firebase e Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Captura o formulário e a mensagem
     const form = document.getElementById('formFila');
     const msg = document.getElementById('msg');
 
-    form.addEventListener('submit', (e) => {
+    // Evento de submit
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('nome').value.trim();
       const telefone = document.getElementById('telefone').value.trim();
@@ -89,75 +110,18 @@
         return;
       }
 
-      msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
-      msg.style.display = 'block';
-      form.reset();
+      try {
+        // Salva os dados no Firestore na coleção "fila"
+        await addDoc(collection(db, "fila"), { nome, telefone, hora: new Date() });
+
+        msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
+        msg.style.display = 'block';
+        form.reset();
+      } catch (e) {
+        alert("Erro ao salvar no banco: " + e.message);
+      }
     });
   </script>
-<!-- Importando o Firebase -->
-<script type="module">
-  // Importa as bibliotecas do Firebase (do CDN oficial)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-  // Configuração do seu Firebase (substitua pelos seus dados)
-  const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_AUTH_DOMAIN_AQUI",
-    projectId: "SEU_PROJECT_ID_AQUI",
-    storageBucket: "SEU_BUCKET_AQUI",
-    messagingSenderId: "SEU_SENDER_ID_AQUI",
-    appId: "SEU_APP_ID_AQUI"
-  };
-
-  // Inicializa o Firebase e o banco de dados
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Captura o formulário
-  const form = document.getElementById('formFila');
-  const msg = document.getElementById('msg');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nome = document.getElementById('nome').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
-
-    if (!nome || !telefone) {
-      alert('Preencha nome e telefone.');
-      return;
-    }
-
-    try {
-      await addDoc(collection(db, "fila"), { nome, telefone, hora: new Date() });
-      msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
-      msg.style.display = 'block';
-      form.reset();
-    } catch (e) {
-      alert("Erro ao salvar no banco: " + e.message);
-    }
-  });
-</script>
-
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
-    authDomain: "fila-online-7b900.firebaseapp.com",
-    projectId: "fila-online-7b900",
-    storageBucket: "fila-online-7b900.firebasestorage.app",
-    messagingSenderId: "797876819240",
-    appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
-  
 </body>
 </html>
+

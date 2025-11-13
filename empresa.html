@@ -54,28 +54,57 @@
 
     // Consulta em tempo real da fila, ordenada por hora
     const filaQuery = query(collection(db, "fila"), orderBy("hora"));
-    onSnapshot(filaQuery, (snapshot) => {
-      tabelaFila.innerHTML = ""; // limpa a tabela
-      snapshot.forEach(docItem => {
-        const data = docItem.data();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${data.nome}</td>
-          <td>${data.telefone}</td>
-          <td>${new Date(data.hora.seconds * 1000).toLocaleTimeString()}</td>
-          <td>${data.atendido ? "✔ Atendido" : `<button data-id="${docItem.id}">Atendido</button>`}</td>
-        `;
-        tabelaFila.appendChild(tr);
+onSnapshot(filaQuery, (snapshot) => {
+  tabelaFila.innerHTML = ""; // limpa a tabela
+  snapshot.forEach(docItem => {
+    const data = docItem.data();
+    const tr = document.createElement('tr');
 
-        // Adiciona evento no botão "Atendido"
-        if (!data.atendido) {
-          tr.querySelector('button').addEventListener('click', async () => {
-            const docRef = doc(db, "fila", docItem.id);
-            await updateDoc(docRef, { atendido: true });
-          });
-        }
+    // Substituímos o <td> de ações pelos 3 botões
+    tr.innerHTML = `
+      <td>${data.nome}</td>
+      <td>${data.telefone}</td>
+      <td>${new Date(data.hora.seconds * 1000).toLocaleTimeString()}</td>
+      <td>
+        ${data.status === "atendido" ? "✔ Atendido" : ""}
+        ${data.status === "atendimento" ? "🟠 Em Atendimento" : ""}
+        ${data.status === "naoCompareceu" ? "❌ Não Compareceu" : ""}
+        ${!data.status ? `
+          <button class="atendido" data-id="${docItem.id}">Atendido</button>
+          <button class="atendimento" data-id="${docItem.id}">Em Atendimento</button>
+          <button class="naoCompareceu" data-id="${docItem.id}">Não Compareceu</button>
+        ` : ""}
+      </td>
+    `;
+    tabelaFila.appendChild(tr);
+
+    // Adiciona eventos para cada botão
+    const btnAtendido = tr.querySelector('.atendido');
+    const btnAtendimento = tr.querySelector('.atendimento');
+    const btnNaoCompareceu = tr.querySelector('.naoCompareceu');
+
+    if (btnAtendido) {
+      btnAtendido.addEventListener('click', async () => {
+        const docRef = doc(db, "fila", docItem.id);
+        await updateDoc(docRef, { status: "atendido" });
       });
-    });
+    }
+
+    if (btnAtendimento) {
+      btnAtendimento.addEventListener('click', async () => {
+        const docRef = doc(db, "fila", docItem.id);
+        await updateDoc(docRef, { status: "atendimento" });
+      });
+    }
+
+    if (btnNaoCompareceu) {
+      btnNaoCompareceu.addEventListener('click', async () => {
+        const docRef = doc(db, "fila", docItem.id);
+        await updateDoc(docRef, { status: "naoCompareceu" });
+      });
+    }
+  });
+});
 
   </script>
 </body>

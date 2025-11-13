@@ -2,75 +2,117 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fila Online — Empresa</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; background: #f0f2f5; margin:0; padding:20px; }
-    h1 { color: #222; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    th { background: #007bff; color: #fff; }
-    button { padding: 6px 12px; border: none; border-radius: 6px; background: #28a745; color: #fff; cursor: pointer; }
-    button:hover { background: #218838; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .cliente {
+      background: #fff;
+      padding: 16px;
+      margin: 8px 0;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .info {
+      flex: 1;
+    }
+    button {
+      margin-left: 4px;
+      border: 0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .atendido { background: #28a745; }
+    .em_atendimento { background: #fd7e14; }
+    .nao_compareceu { background: #dc3545; }
   </style>
 </head>
 <body>
-  <h1>Fila Atual — Empresa</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>Hora</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaFila"></tbody>
-  </table>
+  <h1>Fila da Empresa</h1>
+  <div id="listaFila"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
-      authDomain: "fila-online-7b900.firebaseapp.com",
-      projectId: "fila-online-7b900",
-      storageBucket: "fila-online-7b900.firebasestorage.app",
-      messagingSenderId: "797876819240",
-      appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
+    authDomain: "fila-online-7b900.firebaseapp.com",
+    projectId: "fila-online-7b900",
+    storageBucket: "fila-online-7b900.firebasestorage.app",
+    messagingSenderId: "797876819240",
+    appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const listaFila = document.getElementById('listaFila');
+  const filaRef = collection(db, "fila");
 
-    const tabelaFila = document.getElementById('tabelaFila');
+  // Consulta em tempo real ordenando pelo horário
+  const filaQuery = query(filaRef, orderBy("hora"));
 
-    // Consulta em tempo real da fila, ordenada por hora
-    const filaQuery = query(collection(db, "fila"), orderBy("hora"));
-    onSnapshot(filaQuery, (snapshot) => {
-      tabelaFila.innerHTML = ""; // limpa a tabela
-      snapshot.forEach(docItem => {
-        const data = docItem.data();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${data.nome}</td>
-          <td>${data.telefone}</td>
-          <td>${new Date(data.hora.seconds * 1000).toLocaleTimeString()}</td>
-          <td>${data.atendido ? "✔ Atendido" : `<button data-id="${docItem.id}">Atendido</button>`}</td>
-        `;
-        tabelaFila.appendChild(tr);
+  onSnapshot(filaQuery, (snapshot) => {
+    listaFila.innerHTML = "";
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const clienteDiv = document.createElement('div');
+      clienteDiv.className = 'cliente';
 
-        // Adiciona evento no botão "Atendido"
-        if (!data.atendido) {
-          tr.querySelector('button').addEventListener('click', async () => {
-            const docRef = doc(db, "fila", docItem.id);
-            await updateDoc(docRef, { atendido: true });
-          });
-        }
-      });
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.textContent = `${data.nome} — ${data.telefone} — Status: ${data.status || 'na_fila'}`;
+      clienteDiv.appendChild(info);
+
+      // Botões
+      const btnAtendido = document.createElement('button');
+      btnAtendido.textContent = 'Atendido';
+      btnAtendido.className = 'atendido';
+      btnAtendido.onclick = async () => {
+        await updateDoc(doc(db, "fila", docSnap.id), { status: 'atendido' });
+      };
+
+      const btnEmAtendimento = document.createElement('button');
+      btnEmAtendimento.textContent = 'Em Atendimento';
+      btnEmAtendimento.className = 'em_atendimento';
+      btnEmAtendimento.onclick = async () => {
+        await updateDoc(doc(db, "fila", docSnap.id), { status: 'em_atendimento' });
+      };
+
+      const btnNaoCompareceu = document.createElement('button');
+      btnNaoCompareceu.textContent = 'Não Compareceu';
+      btnNaoCompareceu.className = 'nao_compareceu';
+      btnNaoCompareceu.onclick = async () => {
+        await updateDoc(doc(db, "fila", docSnap.id), { status: 'nao_compareceu' });
+      };
+
+      clienteDiv.appendChild(btnEmAtendimento);
+      clienteDiv.appendChild(btnAtendido);
+      clienteDiv.appendChild(btnNaoCompareceu);
+
+      listaFila.appendChild(clienteDiv);
     });
-
-  </script>
+  });
+</script>
 </body>
 </html>

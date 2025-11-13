@@ -5,77 +5,30 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Fila Online — Empresa</title>
   <style>
-    body { 
-      font-family: Arial, Helvetica, sans-serif; 
-      background: #f0f2f5; 
-      margin: 0; 
-      padding: 20px; 
-    }
-
-    h1 { 
-      color: #222; 
-    }
-
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      margin-top: 20px; 
-    }
-
-    th, td { 
-      border: 1px solid #ccc; 
-      padding: 10px; 
-      text-align: left; 
-    }
-
-    th { 
-      background: #007bff; 
-      color: #fff; 
-    }
-
-    button { 
-      padding: 6px 12px; 
-      border: none; 
-      border-radius: 6px; 
-      background: #28a745; 
-      color: #fff; 
-      cursor: pointer; 
-    }
-
-    button:hover { 
-      background: #218838; 
-    }
-
-    button.atendimento { 
-      background: #fd7e14; 
-      color: #fff; 
-    }
-
-    button.atendimento:hover { 
-      background: #e36b00; 
-    }
-
-    button.naoCompareceu { 
-      background: #dc3545; 
-      color: #fff; 
-    }
-
-    button.naoCompareceu:hover { 
-      background: #b52a2a; 
-    }
-
-    button.atendido { 
-      background: #28a745; 
-      color: #fff; 
-    }
-
-    button.atendido:hover { 
-      background: #218838; 
-    }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f0f2f5; margin:0; padding:20px; }
+    h1 { color: #222; }
+    button { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; margin-right:5px; }
+    button.atendimento { background: #fd7e14; color: #fff; }
+    button.atendimento:hover { background: #e36b00; }
+    button.naoCompareceu { background: #dc3545; color: #fff; }
+    button.naoCompareceu:hover { background: #b52a2a; }
+    button.atendido { background: #28a745; color: #fff; }
+    button.atendido:hover { background: #218838; }
+    button.finalizar { background: #17a2b8; color: #fff; }
+    button.finalizar:hover { background: #117a8b; }
+    button#resetStatus { background:#6c757d; color:#fff; margin-bottom:5px; }
+    button#limparFila { background:#dc3545; color:#fff; margin-bottom:10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #007bff; color: #fff; }
   </style>
 </head>
 <body>
   <h1>Fila Atual — Empresa</h1>
+
+  <button id="resetStatus">Resetar Status</button>
+  <button id="limparFila">Limpar Fila do Dia</button>
+
   <table>
     <thead>
       <tr>
@@ -90,7 +43,9 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { 
+      getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDocs, deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
@@ -105,12 +60,13 @@
     const db = getFirestore(app);
 
     const tabelaFila = document.getElementById('tabelaFila');
+    const btnResetStatus = document.getElementById('resetStatus');
+    const btnLimparFila = document.getElementById('limparFila');
 
+    // Consulta em tempo real da fila, ordenada por hora
     const filaQuery = query(collection(db, "fila"), orderBy("hora"));
-
     onSnapshot(filaQuery, (snapshot) => {
       tabelaFila.innerHTML = ""; // limpa a tabela
-
       snapshot.forEach(docItem => {
         const data = docItem.data();
         const tr = document.createElement('tr');
@@ -130,7 +86,6 @@
             ` : ""}
           </td>
         `;
-
         tabelaFila.appendChild(tr);
 
         const btnAtendido = tr.querySelector('.atendido');
@@ -165,9 +120,41 @@
             await updateDoc(docRef, { status: "atendido" });
           });
         }
-
       });
     });
+
+    // Botão Resetar Status
+    btnResetStatus.addEventListener('click', async () => {
+      if (confirm("Tem certeza que quer resetar todos os status?")) {
+        const filaRef = collection(db, "fila");
+        const snapshot = await getDocs(filaRef);
+        snapshot.forEach(async (docItem) => {
+          const docRef = doc(db, "fila", docItem.id);
+          await updateDoc(docRef, { status: "", atendido: false });
+        });
+        alert("Status resetados!");
+      }
+    });
+
+    // Botão Limpar Fila do Dia
+    btnLimparFila.addEventListener('click', async () => {
+      if (confirm("Tem certeza que quer remover todos os registros do dia?")) {
+        const filaRef = collection(db, "fila");
+        const snapshot = await getDocs(filaRef);
+        const hoje = new Date();
+        snapshot.forEach(async (docItem) => {
+          const data = docItem.data();
+          const dataHora = data.hora.toDate ? data.hora.toDate() : new Date(data.hora.seconds * 1000);
+          if (dataHora.toDateString() === hoje.toDateString()) {
+            const docRef = doc(db, "fila", docItem.id);
+            await deleteDoc(docRef);
+          }
+        });
+        alert("Fila do dia removida!");
+      }
+    });
+
   </script>
 </body>
 </html>
+

@@ -25,8 +25,7 @@
       text-align: center;
     }
 
-    h1 {
-      font-size: 20px;
+    h1, h2 {
       margin: 0 0 12px;
       color: #222;
     }
@@ -75,74 +74,65 @@
     <div id="msg"></div>
     <h2>Fila atual:</h2>
     <ul id="listaFila"></ul>
-
   </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+  <script type="module">
+    // --- IMPORTS DO FIREBASE NO TOPO ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
-    authDomain: "fila-online-7b900.firebaseapp.com",
-    projectId: "fila-online-7b900",
-    storageBucket: "fila-online-7b900.firebasestorage.app",
-    messagingSenderId: "797876819240",
-    appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
-  };
+    // --- CONFIGURAÇÃO DO FIREBASE ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
+      authDomain: "fila-online-7b900.firebaseapp.com",
+      projectId: "fila-online-7b900",
+      storageBucket: "fila-online-7b900.firebasestorage.app",
+      messagingSenderId: "797876819240",
+      appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const form = document.getElementById('formFila');
-  const msg = document.getElementById('msg');
+    console.log("Firestore está inicializado:", db);
 
-  form.addEventListener('submit', async (e) => {
-    
-    e.preventDefault();
-    const nome = document.getElementById('nome').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
+    // --- ENVIO DO FORMULÁRIO ---
+    const form = document.getElementById('formFila');
+    const msg = document.getElementById('msg');
 
-    if (!nome || !telefone) {
-      alert('Preencha nome e telefone.');
-      return;
-    }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value.trim();
+      const telefone = document.getElementById('telefone').value.trim();
 
-    try {
-    // Salva os dados na coleção "fila"
-      await addDoc(collection(db, "fila"), { nome, telefone, hora: new Date() });
+      if (!nome || !telefone) {
+        alert('Preencha nome e telefone.');
+        return;
+      }
 
-      msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
-      msg.style.display = 'block';
-      form.reset();
-    } catch (e) {
-      alert("Erro ao salvar no banco: " + e.message);
-    }
-  });
-  
-// Mostrar a fila em tempo real
-import { onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+      try {
+        await addDoc(collection(db, "fila"), { nome, telefone, hora: new Date() });
+        msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
+        msg.style.display = 'block';
+        form.reset();
+      } catch (e) {
+        alert("Erro ao salvar no banco: " + e.message);
+      }
+    });
 
-const listaFila = document.getElementById('listaFila');
+    // --- LISTA DA FILA EM TEMPO REAL ---
+    const listaFila = document.getElementById('listaFila');
+    const filaQuery = query(collection(db, "fila"), orderBy("hora"));
 
-// Cria uma consulta na coleção "fila", ordenando pelo horário
-const filaQuery = query(collection(db, "fila"), orderBy("hora"));
-
-// Atualiza a lista sempre que houver mudanças na coleção
-onSnapshot(filaQuery, (snapshot) => {
-  listaFila.innerHTML = ""; // limpa a lista antes de preencher
-  snapshot.forEach((doc) => {
-    const li = document.createElement('li');
-    li.textContent = `${doc.data().nome} — ${doc.data().telefone}`;
-    listaFila.appendChild(li);
-  });
-});
-
-
-  
-  console.log("Firestore está inicializado:", db);
-</script>
+    onSnapshot(filaQuery, (snapshot) => {
+      listaFila.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const li = document.createElement('li');
+        li.textContent = `${doc.data().nome} — ${doc.data().telefone}`;
+        listaFila.appendChild(li);
+      });
+    });
+  </script>
 
 </body>
 </html>
-

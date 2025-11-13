@@ -60,14 +60,13 @@ onSnapshot(filaQuery, (snapshot) => {
     const data = docItem.data();
     const tr = document.createElement('tr');
 
-    // Substituímos o <td> de ações pelos 3 botões
     tr.innerHTML = `
       <td>${data.nome}</td>
       <td>${data.telefone}</td>
       <td>${new Date(data.hora.seconds * 1000).toLocaleTimeString()}</td>
       <td>
         ${data.status === "atendido" ? "✔ Atendido" : ""}
-        ${data.status === "atendimento" ? "🟠 Em Atendimento" : ""}
+        ${data.status === "emAtendimento" ? "🟠 Em Atendimento <button class='finalizar' data-id='${docItem.id}'>Finalizar Atendimento</button>" : ""}
         ${data.status === "naoCompareceu" ? "❌ Não Compareceu" : ""}
         ${!data.status ? `
           <button class="atendido" data-id="${docItem.id}">Atendido</button>
@@ -78,10 +77,10 @@ onSnapshot(filaQuery, (snapshot) => {
     `;
     tabelaFila.appendChild(tr);
 
-    // Adiciona eventos para cada botão
     const btnAtendido = tr.querySelector('.atendido');
     const btnAtendimento = tr.querySelector('.atendimento');
     const btnNaoCompareceu = tr.querySelector('.naoCompareceu');
+    const btnFinalizar = tr.querySelector('.finalizar');
 
     if (btnAtendido) {
       btnAtendido.addEventListener('click', async () => {
@@ -93,7 +92,7 @@ onSnapshot(filaQuery, (snapshot) => {
     if (btnAtendimento) {
       btnAtendimento.addEventListener('click', async () => {
         const docRef = doc(db, "fila", docItem.id);
-        await updateDoc(docRef, { status: "atendimento" });
+        await updateDoc(docRef, { status: "emAtendimento" });
       });
     }
 
@@ -101,6 +100,13 @@ onSnapshot(filaQuery, (snapshot) => {
       btnNaoCompareceu.addEventListener('click', async () => {
         const docRef = doc(db, "fila", docItem.id);
         await updateDoc(docRef, { status: "naoCompareceu" });
+      });
+    }
+
+    if (btnFinalizar) {
+      btnFinalizar.addEventListener('click', async () => {
+        const docRef = doc(db, "fila", docItem.id);
+        await updateDoc(docRef, { status: "atendido" });
       });
     }
   });

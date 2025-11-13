@@ -14,6 +14,7 @@
       justify-content: center;
       height: 100vh;
     }
+
     .card {
       background: #fff;
       padding: 24px;
@@ -23,11 +24,13 @@
       max-width: 92%;
       text-align: center;
     }
+
     h1 {
       font-size: 20px;
       margin: 0 0 12px;
       color: #222;
     }
+
     input {
       width: 100%;
       padding: 10px;
@@ -36,6 +39,7 @@
       border-radius: 8px;
       font-size: 15px;
     }
+
     button {
       width: 100%;
       padding: 12px;
@@ -46,9 +50,11 @@
       font-size: 15px;
       cursor: pointer;
     }
+
     button:hover {
       background: #0056b3;
     }
+
     #msg {
       margin-top: 12px;
       color: #0066cc;
@@ -63,98 +69,84 @@
     <h1>Entrar na fila</h1>
     <form id="formFila">
       <input id="nome" type="text" placeholder="Seu nome" required />
-      <input id="telefone" type="tel" placeholder="Seu telefone" maxlength="11" required />
+      <input id="telefone" type="tel" placeholder="Seu telefone" required maxlength="15" />
       <button type="submit">Entrar na fila</button>
     </form>
     <div id="msg"></div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    // Config do Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
-      authDomain: "fila-online-7b900.firebaseapp.com",
-      projectId: "fila-online-7b900",
-      storageBucket: "fila-online-7b900.firebasestorage.app",
-      messagingSenderId: "797876819240",
-      appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
+    authDomain: "fila-online-7b900.firebaseapp.com",
+    projectId: "fila-online-7b900",
+    storageBucket: "fila-online-7b900.firebasestorage.app",
+    messagingSenderId: "797876819240",
+    appId: "1:797876819240:web:034a70c5e804ab0440ac1d"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const form = document.getElementById('formFila');
-    const msg = document.getElementById('msg');
+  const form = document.getElementById('formFila');
+  const msg = document.getElementById('msg');
+  const nomeInput = document.getElementById('nome');
+  const telefoneInput = document.getElementById('telefone');
 
-    // Formatação do nome e telefone
-    const nomeInput = document.getElementById('nome');
-    const telefoneInput = document.getElementById('telefone');
+  // Coloca o nome em maiúsculas enquanto digita
+  nomeInput.addEventListener('input', () => {
+    nomeInput.value = nomeInput.value.toUpperCase();
+  });
 
-    nomeInput.addEventListener('input', () => {
-      nomeInput.value = nomeInput.value.toUpperCase();
-    });
+  // Formata telefone (11 dígitos)
+  telefoneInput.addEventListener('input', (e) => {
+    let num = e.target.value.replace(/\D/g, '');
+    if (num.length > 11) num = num.slice(0,11);
 
-    telefoneInput.addEventListener('input', () => {
-      let digits = telefoneInput.value.replace(/\D/g, '').slice(0,11);
-      if (digits.length <= 2) {
-        telefoneInput.value = digits;
-      } else if (digits.length <= 7) {
-        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-      } else {
-        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
-      }
-    });
+    if (num.length > 6) {
+      e.target.value = `(${num.slice(0,2)}) ${num.slice(2,7)}-${num.slice(7)}`;
+    } else if (num.length > 2) {
+      e.target.value = `(${num.slice(0,2)}) ${num.slice(2)}`;
+    } else {
+      e.target.value = `(${num}`;
+    }
+  });
 
-    // Função para entrar na fila
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const nome = nomeInput.value.trim();
-      const telefone = telefoneInput.value.replace(/\D/g, ''); // só números
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = nomeInput.value.trim();
+    const telefone = telefoneInput.value.trim();
 
-      if (!nome || !telefone) {
-        alert("Preencha nome e telefone.");
+    if (!nome || !telefone) {
+      alert('Preencha nome e telefone.');
+      return;
+    }
+
+    try {
+      // Verifica se já existe na fila
+      const q = query(collection(db, "fila"), where("nome", "==", nome), where("telefone", "==", telefone));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        msg.textContent = `Olá, ${nome}! Você já está na fila.`;
+        msg.style.display = 'block';
         return;
       }
 
-      const filaRef = collection(db, "fila");
-
-      // Verifica se já existe
-      const q = query(filaRef, where("telefone","==",telefone));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        // Adiciona novo registro
-        await addDoc(filaRef, { nome, telefone, hora: new Date(), atendido: false });
-      }
-
+      // Adiciona na fila
+      await addDoc(collection(db, "fila"), { nome, telefone, hora: new Date() });
+      msg.textContent = `Olá, ${nome}! Você entrou na fila.`;
       msg.style.display = 'block';
-
-      // Atualiza posição na fila em tempo real
-      const filaQuery = query(filaRef, orderBy("hora"));
-      onSnapshot(filaQuery, (snapshot) => {
-        let fila = [];
-        snapshot.forEach(doc => {
-          if (!doc.data().atendido) fila.push(doc.data());
-        });
-
-        const pos = fila.findIndex(c => c.telefone === telefone);
-        if (pos === -1) {
-          msg.textContent = "Você já foi atendido!";
-        } else if (pos === 0) {
-          msg.textContent = "Sua vez chegou!";
-        } else if (pos === 1) {
-          msg.textContent = "Você é o próximo da fila!";
-        } else {
-          msg.textContent = `Sua posição na fila: ${pos+1}`;
-        }
-      });
-
       form.reset();
-    });
+    } catch (err) {
+      alert("Erro ao salvar no banco: " + err.message);
+    }
+  });
 
-  </script>
+  console.log("Firestore está inicializado:", db);
+</script>
+
 </body>
 </html>

@@ -73,7 +73,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
     import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-    // Config do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCmEQl0LAcrZ0uio-DYYknD-NrrvFN1RjI",
       authDomain: "fila-online-7b900.firebaseapp.com",
@@ -88,63 +87,70 @@
 
     const form = document.getElementById('formFila');
     const msg = document.getElementById('msg');
-
-    // Formatação do nome e telefone
     const nomeInput = document.getElementById('nome');
     const telefoneInput = document.getElementById('telefone');
 
+    // --- Formatação do nome e telefone ---
     nomeInput.addEventListener('input', () => {
       nomeInput.value = nomeInput.value.toUpperCase();
     });
 
     telefoneInput.addEventListener('input', () => {
-      let digits = telefoneInput.value.replace(/\D/g, '');
-      if (digits.length > 11) digits = digits.slice(0, 11);
-
+      let digits = telefoneInput.value.replace(/\D/g, '').slice(0,11);
       if (digits.length <= 2) {
         telefoneInput.value = digits;
       } else if (digits.length <= 7) {
         telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2)}`;
       } else {
-        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
+        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
       }
     });
 
-    // Função para entrar na fila
+    // --- Verifica se o cliente já está salvo localmente ---
+    const storedTelefone = localStorage.getItem('telefone');
+    if (storedTelefone) {
+      acompanharFila(storedTelefone);
+      form.style.display = 'none';
+    }
+
+    // --- Submit do formulário ---
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = nomeInput.value.trim();
-      const telefone = telefoneInput.value.replace(/\D/g, ''); // só números
+      const telefone = telefoneInput.value.replace(/\D/g, '');
 
-      if (telefone.length !== 11) {
-        alert("Digite um número de telefone válido com DDD e 9 dígitos.");
-        return;
-      }
-
-      if (!nome || !telefone) {
-        alert("Preencha nome e telefone.");
+      if (!nome || telefone.length !== 11) {
+        alert("Preencha corretamente o nome e telefone (11 dígitos).");
         return;
       }
 
       const filaRef = collection(db, "fila");
-
-      // Verifica se já existe
       const q = query(filaRef, where("telefone","==",telefone));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        // Adiciona novo registro
-        await addDoc(filaRef, { nome, telefone, hora: new Date(), atendido: false });
+        await addDoc(filaRef, { nome, telefone, hora: new Date(), status: "" });
       }
+
+      localStorage.setItem('telefone', telefone);
+      form.style.display = 'none';
+      acompanharFila(telefone);
+    });
+
+    // --- Função que acompanha a fila ---
+    function acompanharFila(telefone) {
+      const filaRef = collection(db, "fila");
+      const filaQuery = query(filaRef, orderBy("hora"));
 
       msg.style.display = 'block';
 
-      // Atualiza posição na fila em tempo real
-      const filaQuery = query(filaRef, orderBy("hora"));
       onSnapshot(filaQuery, (snapshot) => {
         let fila = [];
         snapshot.forEach(doc => {
-          if (!doc.data().atendido) fila.push(doc.data());
+          const data = doc.data();
+          if (data.status !== "atendido" && data.status !== "naoCompareceu") {
+            fila.push(data);
+          }
         });
 
         const pos = fila.findIndex(c => c.telefone === telefone);
@@ -158,9 +164,7 @@
           msg.textContent = `Sua posição na fila: ${pos+1}`;
         }
       });
-
-      form.reset();
-    });
+    }
   </script>
 </body>
 </html>

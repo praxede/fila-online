@@ -100,11 +100,11 @@
     telefoneInput.addEventListener('input', () => {
       let digits = telefoneInput.value.replace(/\D/g, '').slice(0,11);
       if (digits.length <= 2) {
-        telefoneInput.value = digits;
+        telefoneInput.value = `(${digits}`;
       } else if (digits.length <= 7) {
         telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2)}`;
       } else {
-        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
       }
     });
 

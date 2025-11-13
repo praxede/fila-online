@@ -63,7 +63,7 @@
     <h1>Entrar na fila</h1>
     <form id="formFila">
       <input id="nome" type="text" placeholder="Seu nome" required />
-      <input id="telefone" type="tel" placeholder="Seu telefone" maxlength="11" required />
+      <input id="telefone" type="tel" placeholder="Seu telefone" required />
       <button type="submit">Entrar na fila</button>
     </form>
     <div id="msg"></div>
@@ -99,25 +99,27 @@
 
     telefoneInput.addEventListener('input', () => {
       let digits = telefoneInput.value.replace(/\D/g, '');
-      if (digits.length > 11) digits = digits.slice(0,11);
+      if (digits.length > 11) digits = digits.slice(0, 11);
 
       if (digits.length <= 2) {
         telefoneInput.value = digits;
-      } else if (digits.length <= 6) {
+      } else if (digits.length <= 7) {
         telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2)}`;
-      } else if (digits.length <= 10) {
-        telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
       } else {
         telefoneInput.value = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7,11)}`;
       }
     });
-
 
     // Função para entrar na fila
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = nomeInput.value.trim();
       const telefone = telefoneInput.value.replace(/\D/g, ''); // só números
+
+      if (telefone.length !== 11) {
+        alert("Digite um número de telefone válido com DDD e 9 dígitos.");
+        return;
+      }
 
       if (!nome || !telefone) {
         alert("Preencha nome e telefone.");
@@ -159,7 +161,6 @@
 
       form.reset();
     });
-
   </script>
 </body>
 </html>

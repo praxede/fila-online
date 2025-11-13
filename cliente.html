@@ -143,6 +143,8 @@
       const filaQuery = query(filaRef, orderBy("hora"));
 
       msg.style.display = 'block';
+      const titulo = document.querySelector('.card h1');
+      titulo.textContent = "Acompanhe sua posição";
 
       onSnapshot(filaQuery, (snapshot) => {
         let fila = [];

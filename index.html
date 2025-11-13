@@ -73,6 +73,9 @@
       <button type="submit">Entrar na fila</button>
     </form>
     <div id="msg"></div>
+    <h2>Fila atual:</h2>
+    <ul id="listaFila"></ul>
+
   </div>
 
 <script type="module">
@@ -95,6 +98,7 @@
   const msg = document.getElementById('msg');
 
   form.addEventListener('submit', async (e) => {
+    
     e.preventDefault();
     const nome = document.getElementById('nome').value.trim();
     const telefone = document.getElementById('telefone').value.trim();
@@ -115,6 +119,25 @@
       alert("Erro ao salvar no banco: " + e.message);
     }
   });
+  
+// Mostrar a fila em tempo real
+import { onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+const listaFila = document.getElementById('listaFila');
+
+// Cria uma consulta na coleção "fila", ordenando pelo horário
+const filaQuery = query(collection(db, "fila"), orderBy("hora"));
+
+// Atualiza a lista sempre que houver mudanças na coleção
+onSnapshot(filaQuery, (snapshot) => {
+  listaFila.innerHTML = ""; // limpa a lista antes de preencher
+  snapshot.forEach((doc) => {
+    const li = document.createElement('li');
+    li.textContent = `${doc.data().nome} — ${doc.data().telefone}`;
+    listaFila.appendChild(li);
+  });
+});
+
 
   
   console.log("Firestore está inicializado:", db);

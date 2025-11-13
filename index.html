@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fila Online</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .card {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.08);
+      width: 320px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 0;
+      border-radius: 8px;
+      background: #007bff;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Fila Online</h1>
+    <button onclick="window.location.href='cliente.html'">Sou Cliente</button>
+    <button onclick="entrarEmpresa()">Sou Empresa</button>
+  </div>
+
+  <script>
+    function entrarEmpresa() {
+      const senha = prompt("Digite a senha da empresa:");
+      // senha definida no código:
+      if (senha === "admin123") {
+        window.location.href = "empresa.html";
+      } else if (senha !== null) {
+        alert("Senha incorreta!");
+      }
+    }
+  </script>
+</body>
+</html>
